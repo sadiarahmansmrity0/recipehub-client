@@ -51,9 +51,16 @@ export default function Navbar() {
             
             {user ? (
               <>
+              
                 <Link href="/dashboard" className="text-gray-600 hover:text-orange-600 px-3 py-2 rounded-lg hover:bg-orange-50 transition-all duration-200 font-medium">
                   Dashboard
                 </Link>
+                 <Link 
+      href="/dashboard/my-recipes" 
+      className="text-gray-600 hover:text-orange-600 px-3 py-2 rounded-lg hover:bg-orange-50 transition-all duration-200"
+    >
+      My Recipes
+    </Link>
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-50 rounded-full border border-orange-100">
                   <FaUser className="text-orange-500 text-sm" />
                   <span className="text-sm font-medium text-gray-700">{user.name || 'User'}</span>
@@ -77,6 +84,7 @@ export default function Navbar() {
                   <span className="hidden sm:inline">Sign Up</span>
                 </Link>
               </>
+              
             )}
           </div>
         </div>
