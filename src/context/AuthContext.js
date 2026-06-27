@@ -14,8 +14,14 @@ export const AuthProvider = ({ children }) => {
         const checkAuth = async () => {
             try {
                 const response = await api.get('/auth/me');
+                console.log('Auth check successful:', response.data);
+                console.log('User role:', response.data.role);
                 setUser(response.data);
             } catch (error) {
+                // 401 is expected if not logged in - don't show error
+                if (error.response?.status !== 401) {
+                    console.error('Auth check error:', error);
+                }
                 setUser(null);
             } finally {
                 setLoading(false);
@@ -25,26 +31,28 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-  const login = async (email, password) => {
-    try {
-        const response = await api.post('/auth/login', { email, password });
-        console.log('Login response user:', response.data.user);
-        console.log('User ID:', response.data.user._id || response.data.user.id);
-        setUser(response.data.user);
-        return { success: true };
-    } catch (error) {
-        return { 
-            success: false, 
-            message: error.response?.data?.message || 'Login failed' 
-        };
-    }
-};
+    const login = async (email, password) => {
+        try {
+            const response = await api.post('/auth/login', { email, password });
+            console.log('Login response:', response.data);
+            setUser(response.data.user);
+            return { success: true };
+        } catch (error) {
+            console.error('Login error:', error);
+            return { 
+                success: false, 
+                message: error.response?.data?.message || 'Login failed' 
+            };
+        }
+    };
+
     const register = async (name, email, password, image) => {
         try {
             const response = await api.post('/auth/register', { name, email, password, image });
             setUser(response.data.user);
             return { success: true };
         } catch (error) {
+            console.error('Register error:', error);
             return { 
                 success: false, 
                 message: error.response?.data?.message || 'Registration failed' 
@@ -62,38 +70,25 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-  const updateProfile = async (data) => {
-    try {
-        const response = await api.put('/auth/profile', data);
-        console.log('Profile update response:', response.data);
-        
-        if (response.data.success) {
-            // Update user state with new data
-            const updatedUser = {
-                ...user,
-                name: response.data.user.name,
-                image: response.data.user.image
-            };
-            setUser(updatedUser);
-            
-            // Return the user data
+    const updateProfile = async (data) => {
+        try {
+            const response = await api.put('/auth/profile', data);
+            if (response.data.success) {
+                setUser(prev => ({
+                    ...prev,
+                    ...response.data.user
+                }));
+                return { success: true, user: response.data.user };
+            }
+            return { success: false, message: 'Update failed' };
+        } catch (error) {
+            console.error('Profile update error:', error);
             return { 
-                success: true, 
-                user: updatedUser 
+                success: false, 
+                message: error.response?.data?.message || 'Update failed' 
             };
         }
-        return { 
-            success: false, 
-            message: 'Update failed' 
-        };
-    } catch (error) {
-        console.error('Profile update error:', error);
-        return { 
-            success: false, 
-            message: error.response?.data?.message || 'Update failed' 
-        };
-    }
-};
+    };
 
     return (
         <AuthContext.Provider value={{ 

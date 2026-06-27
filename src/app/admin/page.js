@@ -150,33 +150,33 @@ export default function AdminDashboard() {
                 })}
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Link
-                    href="/admin/users"
-                    className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-6 py-4 rounded-xl font-semibold hover:bg-blue-100 transition-all border border-blue-200"
-                >
-                    <FaUserCog /> Manage Users
-                </Link>
-                <Link
-                    href="/admin/recipes"
-                    className="flex items-center justify-center gap-2 bg-orange-50 text-orange-600 px-6 py-4 rounded-xl font-semibold hover:bg-orange-100 transition-all border border-orange-200"
-                >
-                    <FaUtensils /> Manage Recipes
-                </Link>
-                <Link
-                    href="/admin/reports"
-                    className="flex items-center justify-center gap-2 bg-red-50 text-red-600 px-6 py-4 rounded-xl font-semibold hover:bg-red-100 transition-all border border-red-200"
-                >
-                    <FaFlag /> View Reports
-                </Link>
-                <Link
-                    href="/dashboard/add-recipe"
-                    className="flex items-center justify-center gap-2 bg-green-50 text-green-600 px-6 py-4 rounded-xl font-semibold hover:bg-green-100 transition-all border border-green-200"
-                >
-                    <FaPlus /> Add Recipe
-                </Link>
-            </div>
+            // Quick Actions section
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <Link
+        href="/admin/users"
+        className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-6 py-4 rounded-xl font-semibold hover:bg-blue-100 transition-all border border-blue-200"
+    >
+        <FaUserCog /> Manage Users
+    </Link>
+    <Link
+        href="/admin/recipes"
+        className="flex items-center justify-center gap-2 bg-orange-50 text-orange-600 px-6 py-4 rounded-xl font-semibold hover:bg-orange-100 transition-all border border-orange-200"
+    >
+        <FaUtensils /> Manage Recipes
+    </Link>
+    <Link
+        href="/admin/reports"
+        className="flex items-center justify-center gap-2 bg-red-50 text-red-600 px-6 py-4 rounded-xl font-semibold hover:bg-red-100 transition-all border border-red-200"
+    >
+        <FaFlag /> View Reports
+    </Link>
+    <Link
+        href="/dashboard/add-recipe"
+        className="flex items-center justify-center gap-2 bg-green-50 text-green-600 px-6 py-4 rounded-xl font-semibold hover:bg-green-100 transition-all border border-green-200"
+    >
+        <FaPlus /> Add Recipe
+    </Link>
+</div>
         </div>
     );
 }
