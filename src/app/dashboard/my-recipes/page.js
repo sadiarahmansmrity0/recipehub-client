@@ -36,17 +36,17 @@ export default function MyRecipes() {
     }, [user, authLoading]);
 
     const fetchRecipes = async () => {
-        try {
-            const response = await api.get('/recipes/user/my-recipes');
-            setRecipes(response.data);
-        } catch (error) {
-            console.error('Error fetching recipes:', error);
-            setError('Failed to load recipes');
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    try {
+        // Use the correct API endpoint
+        const response = await api.get('/recipes/user/my-recipes');
+        setRecipes(response.data);
+    } catch (error) {
+        console.error('Error fetching recipes:', error);
+        setError('Failed to load recipes');
+    } finally {
+        setLoading(false);
+    }
+};
     const handleDelete = async (recipeId) => {
         setDeleting(true);
         try {

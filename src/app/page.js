@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '@/context/AuthContext'; 
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -7,6 +8,7 @@ import { FaArrowRight, FaHeart, FaStar, FaUtensils, FaClock } from 'react-icons/
 import api from '@/lib/axios';
 
 export default function Home() {
+    const { user } = useContext(AuthContext);  
     const [featuredRecipes, setFeaturedRecipes] = useState([]);
     const [popularRecipes, setPopularRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -218,13 +220,13 @@ export default function Home() {
                     <p className="text-xl mb-8 opacity-90">
                         Join our community of food lovers and start sharing your culinary creations
                     </p>
-                    <Link
-                        href="/register"
-                        className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all"
-                    >
-                        Get Started
-                        <FaArrowRight />
-                    </Link>
+                       <Link
+        href={user ? '/dashboard' : '/register'}
+        className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all"
+    >
+        {user ? 'Go to Dashboard' : 'Get Started'}
+        <FaArrowRight />
+    </Link>
                 </div>
             </section>
         </div>

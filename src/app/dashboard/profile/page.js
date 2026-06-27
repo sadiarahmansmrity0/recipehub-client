@@ -62,35 +62,55 @@ export default function Profile() {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setError('');
-        setSuccess('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
-        try {
-            let imageUrl = formData.image;
-            if (imageFile) {
+    try {
+        let imageUrl = formData.image;
+        if (imageFile) {
+            try {
                 imageUrl = await uploadImage();
+            } catch (uploadError) {
+                setError('Image upload failed: ' + uploadError.message);
+                setLoading(false);
+                return;
             }
-
-            const result = await updateProfile({
-                name: formData.name,
-                image: imageUrl
-            });
-
-            if (result.success) {
-                setSuccess('Profile updated successfully!');
-                setTimeout(() => setSuccess(''), 3000);
-            } else {
-                setError(result.message);
-            }
-        } catch (error) {
-            setError('Failed to update profile');
-        } finally {
-            setLoading(false);
         }
-    };
+
+        const result = await updateProfile({
+            name: formData.name,
+            image: imageUrl
+        });
+
+        console.log('Update result:', result);
+
+        if (result && result.success) {
+            setSuccess('Profile updated successfully!');
+            
+            // Update form data with new values
+            if (result.user) {
+                setFormData(prev => ({
+                    ...prev,
+                    name: result.user.name || prev.name,
+                    image: result.user.image || prev.image
+                }));
+                setImagePreview(result.user.image || '');
+            }
+            
+            setTimeout(() => setSuccess(''), 3000);
+        } else {
+            setError(result?.message || 'Failed to update profile');
+        }
+    } catch (error) {
+        console.error('Submit error:', error);
+        setError('Failed to update profile');
+    } finally {
+        setLoading(false);
+    }
+};
 
     if (authLoading) return <Loading />;
 

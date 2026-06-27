@@ -1,9 +1,9 @@
 'use client';
-import { useState, useContext, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useContext } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
-import { FaUpload, FaTimes, FaPlus, FaTrash, FaInfoCircle } from 'react-icons/fa';
+import { FaSave, FaTimes, FaPlus, FaTrash, FaSpinner ,FaUpload } from 'react-icons/fa';
 import api from '@/lib/axios';
 import Loading from '@/components/Loading';
 
@@ -11,16 +11,19 @@ const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Drink',
 const CUISINES = ['Italian', 'Chinese', 'Mexican', 'Indian', 'Thai', 'Japanese', 'French', 'American', 'Mediterranean', 'Other'];
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
-export default function AddRecipe() {
+export default function EditRecipe() {
     const { user, loading: authLoading } = useContext(AuthContext);
     const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [imageFile, setImageFile] = useState(null);
-    const [imagePreview, setImagePreview] = useState('');
-    const [uploading, setUploading] = useState(false);
+    const params = useParams();
+    const recipeId = params.id;
+    
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState('');
+    
     const [formData, setFormData] = useState({
         recipeName: '',
         category: '',
@@ -30,180 +33,117 @@ export default function AddRecipe() {
         ingredients: [''],
         instructions: [''],
         price: '',
-        isPremium: false
+        isPremium: false,
+        recipeImage: ''
     });
 
-    // Redirect if not logged in
     useEffect(() => {
         if (!authLoading && !user) {
             router.push('/login');
+            return;
         }
-    }, [user, authLoading, router]);
+        fetchRecipe();
+    }, [recipeId, user, authLoading]);
 
-    // Check if user can add more recipes (max 2 for non-premium)
-    useEffect(() => {
-        if (user && !user.isPremium && user.recipeCount >= 2) {
-            router.push('/dashboard?limitReached=true');
-        }
-    }, [user, router]);
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Validate file type
-            if (!file.type.startsWith('image/')) {
-                setError('Please upload an image file');
-                return;
-            }
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                setError('Image must be less than 5MB');
-                return;
-            }
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
-            setError('');
-        }
-    };
-
-    // FIXED: Image upload function with proper error handling
-    const uploadImage = async () => {
-    if (!imageFile) return '';
-
-    setUploading(true);
-    const uploadFormData = new FormData();
-    uploadFormData.append('image', imageFile);
-
+    const fetchRecipe = async () => {
     try {
-        const apiKey = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
+        const response = await api.get(`/recipes/${recipeId}`);
+        const recipe = response.data;
         
-        // Check if API key exists
-        if (!apiKey) {
-            throw new Error('ImgBB API key is missing. Please add NEXT_PUBLIC_IMGBB_API_KEY to .env.local');
-        }
-
-        console.log('Uploading image to ImgBB...');
+        console.log('Recipe data:', recipe);
+        console.log('Current user:', user);
         
-        const response = await fetch(
-            `https://api.imgbb.com/1/upload?key=${apiKey}`,
-            { 
-                method: 'POST', 
-                body: uploadFormData 
-            }
-        );
-
-        const data = await response.json();
-        console.log('ImgBB Response:', data);
-
-        if (!response.ok) {
-            throw new Error(data.error?.message || `Upload failed: ${response.status}`);
+        // Check if user owns this recipe - FIXED
+        const authorId = recipe.authorId?._id || recipe.authorId;
+        const userId = user?.id || user?._id;
+        
+        if (authorId !== userId && user?.role !== 'admin') {
+            console.log('Permission denied. Author:', authorId, 'User:', userId);
+            setError('You do not have permission to edit this recipe');
+            setLoading(false);
+            return;
         }
 
-        if (!data.success) {
-            throw new Error(data.error?.message || 'Image upload failed');
-        }
-
-        return data.data.url;
+        setFormData({
+            recipeName: recipe.recipeName || '',
+            category: recipe.category || '',
+            cuisineType: recipe.cuisineType || '',
+            difficultyLevel: recipe.difficultyLevel || '',
+            preparationTime: recipe.preparationTime || '',
+            ingredients: recipe.ingredients || [''],
+            instructions: recipe.instructions || [''],
+            price: recipe.price || '',
+            isPremium: recipe.isPremium || false,
+            recipeImage: recipe.recipeImage || ''
+        });
+        setImagePreview(recipe.recipeImage || '');
     } catch (error) {
-        console.error('Image upload error:', error);
-        throw new Error(error.message || 'Failed to upload image');
+        console.error('Error fetching recipe:', error);
+        setError('Recipe not found');
     } finally {
-        setUploading(false);
+        setLoading(false);
     }
 };
 
+    const uploadImage = async () => {
+        if (!imageFile) return formData.recipeImage;
+
+        const uploadFormData = new FormData();
+        uploadFormData.append('image', imageFile);
+
+        try {
+            const response = await fetch(
+                `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
+                { method: 'POST', body: uploadFormData }
+            );
+            const data = await response.json();
+            return data.data.url;
+        } catch (error) {
+            console.error('Image upload error:', error);
+            throw new Error('Failed to upload image');
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
+        setSaving(true);
         setError('');
         setSuccess('');
 
         try {
-            // Validate form
-            if (!formData.recipeName.trim()) {
-                setError('Recipe name is required');
-                setLoading(false);
-                return;
-            }
-            if (!formData.category) {
-                setError('Category is required');
-                setLoading(false);
-                return;
-            }
-            if (!formData.cuisineType) {
-                setError('Cuisine type is required');
-                setLoading(false);
-                return;
-            }
-            if (!formData.difficultyLevel) {
-                setError('Difficulty level is required');
-                setLoading(false);
-                return;
-            }
-            if (!formData.preparationTime || parseInt(formData.preparationTime) <= 0) {
-                setError('Preparation time is required');
-                setLoading(false);
-                return;
+            let imageUrl = formData.recipeImage;
+            if (imageFile) {
+                try {
+                    imageUrl = await uploadImage();
+                } catch (uploadError) {
+                    setError(uploadError.message);
+                    setSaving(false);
+                    return;
+                }
             }
 
-            // Upload image
-           let imageUrl = '';
-if (imageFile) {
-    try {
-        imageUrl = await uploadImage();
-    } catch (uploadError) {
-        console.warn('Image upload failed, using placeholder');
-        // Use a placeholder with the recipe name
-        imageUrl = `https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=${encodeURIComponent(formData.recipeName)}`;
-    }
-} else {
-    // Use placeholder if no image selected
-    imageUrl = `https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=${encodeURIComponent(formData.recipeName)}`;
-}
-
-            // Prepare recipe data
             const recipeData = {
-                recipeName: formData.recipeName.trim(),
+                ...formData,
                 recipeImage: imageUrl,
-                category: formData.category,
-                cuisineType: formData.cuisineType,
-                difficultyLevel: formData.difficultyLevel,
-                preparationTime: parseInt(formData.preparationTime),
                 ingredients: formData.ingredients.filter(i => i.trim()),
                 instructions: formData.instructions.filter(i => i.trim()),
-                price: parseFloat(formData.price) || 0,
-                isPremium: formData.isPremium || false
+                preparationTime: parseInt(formData.preparationTime) || 0,
+                price: parseFloat(formData.price) || 0
             };
 
-            // Send to API
-            const response = await api.post('/recipes', recipeData);
+            const response = await api.put(`/recipes/${recipeId}`, recipeData);
 
             if (response.data.success) {
-                setSuccess('Recipe created successfully!');
-                // Reset form
-                setFormData({
-                    recipeName: '',
-                    category: '',
-                    cuisineType: '',
-                    difficultyLevel: '',
-                    preparationTime: '',
-                    ingredients: [''],
-                    instructions: [''],
-                    price: '',
-                    isPremium: false
-                });
-                setImageFile(null);
-                setImagePreview('');
-                
+                setSuccess('Recipe updated successfully!');
                 setTimeout(() => {
                     router.push('/dashboard/my-recipes');
                 }, 1500);
             }
         } catch (error) {
-            console.error('Error creating recipe:', error);
-            setError(error.response?.data?.message || 'Failed to create recipe');
+            console.error('Error updating recipe:', error);
+            setError(error.response?.data?.message || 'Failed to update recipe');
         } finally {
-            setLoading(false);
+            setSaving(false);
         }
     };
 
@@ -229,27 +169,7 @@ if (imageFile) {
         }));
     };
 
-    if (authLoading) return <Loading />;
-
-    // Check if user can add recipes
-    if (user && !user.isPremium && user.recipeCount >= 2) {
-        return (
-            <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-                <div className="text-6xl mb-4">🔒</div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">Recipe Limit Reached</h2>
-                <p className="text-gray-600 mb-6">
-                    You've reached the maximum of 2 recipes. 
-                    Upgrade to Premium for unlimited recipes!
-                </p>
-                <Link
-                    href="/dashboard/premium"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
-                >
-                    <FaCrown /> Upgrade to Premium
-                </Link>
-            </div>
-        );
-    }
+    if (authLoading || loading) return <Loading />;
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
@@ -259,14 +179,7 @@ if (imageFile) {
                 transition={{ duration: 0.5 }}
             >
                 <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Add New Recipe</h1>
-                        <p className="text-gray-500 mt-1">
-                            {user?.isPremium 
-                                ? '✨ Premium user - Unlimited recipes!' 
-                                : `📝 ${user?.recipeCount || 0}/2 recipes used`}
-                        </p>
-                    </div>
+                    <h1 className="text-3xl font-bold text-gray-800">Edit Recipe</h1>
                     <button
                         onClick={() => router.back()}
                         className="text-gray-500 hover:text-gray-700"
@@ -276,19 +189,14 @@ if (imageFile) {
                 </div>
 
                 {error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 flex items-start gap-3">
-                        <FaInfoCircle className="mt-1 flex-shrink-0" />
-                        <div>
-                            <p className="font-semibold">Error:</p>
-                            <p>{error}</p>
-                        </div>
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
+                        {error}
                     </div>
                 )}
 
                 {success && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-600 flex items-center gap-3">
-                        <span className="text-2xl">✅</span>
-                        <p>{success}</p>
+                    <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl text-green-600">
+                        {success}
                     </div>
                 )}
 
@@ -304,11 +212,10 @@ if (imageFile) {
                             value={formData.recipeName}
                             onChange={(e) => setFormData({ ...formData, recipeName: e.target.value })}
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-orange-400 focus:ring-4 focus:ring-orange-100 outline-none transition-all"
-                            placeholder="Enter recipe name"
                         />
                     </div>
 
-                    {/* Image Upload */}
+                    {/* Image */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Recipe Image
@@ -316,11 +223,17 @@ if (imageFile) {
                         <div className="flex items-center gap-4 flex-wrap">
                             <label className="flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">
                                 <FaUpload />
-                                <span>{imageFile ? 'Change Image' : 'Choose Image'}</span>
+                                <span>Change Image</span>
                                 <input
                                     type="file"
                                     accept="image/*"
-                                    onChange={handleImageChange}
+                                    onChange={(e) => {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            setImageFile(file);
+                                            setImagePreview(URL.createObjectURL(file));
+                                        }
+                                    }}
                                     className="hidden"
                                 />
                             </label>
@@ -331,20 +244,9 @@ if (imageFile) {
                                         alt="Preview"
                                         className="w-20 h-20 object-cover rounded-lg border-2 border-orange-200"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setImagePreview('');
-                                            setImageFile(null);
-                                        }}
-                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                                    >
-                                        <FaTimes size={12} />
-                                    </button>
                                 </div>
                             )}
                         </div>
-                        <p className="text-xs text-gray-400 mt-1">Upload a high-quality image (Max 5MB)</p>
                     </div>
 
                     {/* Category, Cuisine, Difficulty */}
@@ -413,7 +315,6 @@ if (imageFile) {
                             value={formData.preparationTime}
                             onChange={(e) => setFormData({ ...formData, preparationTime: e.target.value })}
                             className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-orange-400 focus:ring-4 focus:ring-orange-100 outline-none transition-all"
-                            placeholder="e.g., 30"
                         />
                     </div>
 
@@ -487,7 +388,7 @@ if (imageFile) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-xl">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Price (for premium recipes)
+                                Price
                             </label>
                             <input
                                 type="number"
@@ -511,23 +412,21 @@ if (imageFile) {
                                     onChange={(e) => setFormData({ ...formData, isPremium: e.target.checked })}
                                     className="w-5 h-5 text-orange-500 rounded border-gray-300 focus:ring-orange-500"
                                 />
-                                <span className="text-gray-600">Make this a premium recipe</span>
+                                <span className="text-gray-600">Premium recipe</span>
                             </label>
-                            <p className="text-xs text-gray-400 mt-1">Premium recipes require payment to view</p>
                         </div>
                     </div>
 
-                    {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={loading || uploading}
-                        className="w-full bg-gradient-to-r from-orange-500 to-rose-500 text-white py-4 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        disabled={saving}
+                        className="w-full bg-gradient-to-r from-orange-500 to-rose-500 text-white py-4 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                        {loading || uploading ? (
-                            <span className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                        {saving ? (
+                            <FaSpinner className="animate-spin" />
                         ) : (
                             <>
-                                <FaPlus /> Create Recipe
+                                <FaSave /> Update Recipe
                             </>
                         )}
                     </button>

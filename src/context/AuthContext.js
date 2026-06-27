@@ -25,19 +25,20 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
-    const login = async (email, password) => {
-        try {
-            const response = await api.post('/auth/login', { email, password });
-            setUser(response.data.user);
-            return { success: true };
-        } catch (error) {
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Login failed' 
-            };
-        }
-    };
-
+  const login = async (email, password) => {
+    try {
+        const response = await api.post('/auth/login', { email, password });
+        console.log('Login response user:', response.data.user);
+        console.log('User ID:', response.data.user._id || response.data.user.id);
+        setUser(response.data.user);
+        return { success: true };
+    } catch (error) {
+        return { 
+            success: false, 
+            message: error.response?.data?.message || 'Login failed' 
+        };
+    }
+};
     const register = async (name, email, password, image) => {
         try {
             const response = await api.post('/auth/register', { name, email, password, image });
@@ -61,18 +62,38 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const updateProfile = async (data) => {
-        try {
-            const response = await api.put('/auth/profile', data);
-            setUser(response.data.user);
-            return { success: true };
-        } catch (error) {
+  const updateProfile = async (data) => {
+    try {
+        const response = await api.put('/auth/profile', data);
+        console.log('Profile update response:', response.data);
+        
+        if (response.data.success) {
+            // Update user state with new data
+            const updatedUser = {
+                ...user,
+                name: response.data.user.name,
+                image: response.data.user.image
+            };
+            setUser(updatedUser);
+            
+            // Return the user data
             return { 
-                success: false, 
-                message: error.response?.data?.message || 'Update failed' 
+                success: true, 
+                user: updatedUser 
             };
         }
-    };
+        return { 
+            success: false, 
+            message: 'Update failed' 
+        };
+    } catch (error) {
+        console.error('Profile update error:', error);
+        return { 
+            success: false, 
+            message: error.response?.data?.message || 'Update failed' 
+        };
+    }
+};
 
     return (
         <AuthContext.Provider value={{ 
