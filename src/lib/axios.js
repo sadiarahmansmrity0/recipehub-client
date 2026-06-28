@@ -1,18 +1,22 @@
 import axios from 'axios';
 
+// Determine the API URL based on environment
+const API_URL = process.env.NODE_ENV === 'production' 
+    ? process.env.NEXT_PUBLIC_API_URL  // Production URL from env
+    : 'http://localhost:5000/api';      // Development URL
+
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: API_URL,
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
     }
 });
 
-// Response interceptor to handle 401 errors
+// Response interceptor for debugging
 api.interceptors.response.use(
     response => response,
     error => {
-        // Only log actual errors, not 401 (unauthorized)
         if (error.response?.status !== 401) {
             console.error('API Error:', error.response?.status, error.response?.data);
         }
