@@ -3,8 +3,9 @@ import { useState, useContext, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
-import { FaUpload, FaTimes, FaPlus, FaTrash, FaInfoCircle } from 'react-icons/fa';
+import { FaUpload, FaTimes, FaPlus, FaTrash, FaInfoCircle ,FaCrown } from 'react-icons/fa';
 import api from '@/lib/axios';
+import Link from 'next/link'; 
 import Loading from '@/components/Loading';
 
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Drink', 'Soup', 'Salad', 'Other'];
@@ -42,10 +43,10 @@ export default function AddRecipe() {
 
     // Check if user can add more recipes (max 2 for non-premium)
     useEffect(() => {
-        if (user && !user.isPremium && user.recipeCount >= 2) {
-            router.push('/dashboard?limitReached=true');
-        }
-    }, [user, router]);
+    if (user && !user.isPremium && user.role !== 'admin' && user.recipeCount >= 2) {
+        router.push('/dashboard?limitReached=true');
+    }
+}, [user, router]);
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -232,24 +233,24 @@ if (imageFile) {
     if (authLoading) return <Loading />;
 
     // Check if user can add recipes
-    if (user && !user.isPremium && user.recipeCount >= 2) {
-        return (
-            <div className="max-w-4xl mx-auto px-4 py-12 text-center">
-                <div className="text-6xl mb-4">🔒</div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">Recipe Limit Reached</h2>
-                <p className="text-gray-600 mb-6">
-                    You've reached the maximum of 2 recipes. 
-                    Upgrade to Premium for unlimited recipes!
-                </p>
-                <Link
-                    href="/dashboard/premium"
-                    className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
-                >
-                    <FaCrown /> Upgrade to Premium
-                </Link>
-            </div>
-        );
-    }
+   if (user && !user.isPremium && user.role !== 'admin' && user.recipeCount >= 2) {
+    return (
+        <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+            <div className="text-6xl mb-4">🔒</div>
+            <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">Recipe Limit Reached</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+                You've reached the maximum of 2 recipes. 
+                Upgrade to Premium for unlimited recipes!
+            </p>
+            <Link
+                href="/dashboard/premium"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-white px-8 py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+                <FaCrown /> Upgrade to Premium
+            </Link>
+        </div>
+    );
+}
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">

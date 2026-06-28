@@ -14,11 +14,9 @@ export const AuthProvider = ({ children }) => {
         const checkAuth = async () => {
             try {
                 const response = await api.get('/auth/me');
-                console.log('Auth check successful:', response.data);
-                console.log('User role:', response.data.role);
+                console.log('Auth check - User data:', response.data);
                 setUser(response.data);
             } catch (error) {
-                // 401 is expected if not logged in - don't show error
                 if (error.response?.status !== 401) {
                     console.error('Auth check error:', error);
                 }
@@ -34,11 +32,10 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const response = await api.post('/auth/login', { email, password });
-            console.log('Login response:', response.data);
+            console.log('Login - User data:', response.data.user);
             setUser(response.data.user);
             return { success: true };
         } catch (error) {
-            console.error('Login error:', error);
             return { 
                 success: false, 
                 message: error.response?.data?.message || 'Login failed' 
@@ -49,10 +46,10 @@ export const AuthProvider = ({ children }) => {
     const register = async (name, email, password, image) => {
         try {
             const response = await api.post('/auth/register', { name, email, password, image });
+            console.log('Register - User data:', response.data.user);
             setUser(response.data.user);
             return { success: true };
         } catch (error) {
-            console.error('Register error:', error);
             return { 
                 success: false, 
                 message: error.response?.data?.message || 'Registration failed' 
@@ -74,6 +71,7 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.put('/auth/profile', data);
             if (response.data.success) {
+                console.log('Profile update - New data:', response.data.user);
                 setUser(prev => ({
                     ...prev,
                     ...response.data.user

@@ -6,6 +6,8 @@ import api from '@/lib/axios';
 import { AuthContext } from '@/context/AuthContext';
 import Link from 'next/link';
 import { FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
+import GoogleLoginButton from '@/components/GoogleLoginButton';
+
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -88,7 +90,7 @@ export default function LoginPage() {
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-rose-500 text-white py-3.5 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group"
+              className="w-full bg-gradient-to-r from-orange-500 to-rose-500 text-black py-3.5 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group"
             >
               {isLoading ? (
                 <span className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></span>
@@ -99,6 +101,30 @@ export default function LoginPage() {
                 </>
               )}
             </button>
+         <GoogleLoginButton 
+    onSuccess={async (response) => {
+        try {
+            const res = await fetch('/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: response.credential }),
+            });
+
+            if (res.ok) {
+                router.push('/dashboard');   // redirect only after success
+            } else {
+                setError('Login failed. Please try again.');
+            }
+        } catch (err) {
+            setError('Something went wrong.');
+        }
+    }}
+    onError={() => {
+        setError('Google login failed. Please try again.');
+    }}
+/>
+
+
           </form>
 
           {/* Footer */}

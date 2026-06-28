@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaUserPlus, FaCamera } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaUserPlus, FaLink, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function RegisterPage() {
     const { register } = useContext(AuthContext);
@@ -15,38 +15,11 @@ export default function RegisterPage() {
         password: '', 
         image: '' 
     });
-    const [imageFile, setImageFile] = useState(null);
-    const [imagePreview, setImagePreview] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
-
-    const uploadImage = async () => {
-        if (!imageFile) return '';
-
-        const uploadFormData = new FormData();
-        uploadFormData.append('image', imageFile);
-
-        try {
-            const response = await fetch(
-                `https://api.imgbb.com/1/upload?key=${process.env.NEXT_PUBLIC_IMGBB_API_KEY}`,
-                { method: 'POST', body: uploadFormData }
-            );
-            const data = await response.json();
-            return data.data.url;
-        } catch (error) {
-            console.error('Image upload error:', error);
-            return '';
-        }
-    };
+    const [showPassword, setShowPassword] = useState(false);
+    const [imagePreview, setImagePreview] = useState('');
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -55,17 +28,11 @@ export default function RegisterPage() {
         setSuccess('');
 
         try {
-            // Upload image if selected
-            let imageUrl = '';
-            if (imageFile) {
-                imageUrl = await uploadImage();
-            }
-
             const result = await register(
                 formData.name,
                 formData.email,
                 formData.password,
-                imageUrl
+                formData.image
             );
 
             if (result.success) {
@@ -91,7 +58,7 @@ export default function RegisterPage() {
                 transition={{ duration: 0.5 }}
                 className="w-full max-w-md"
             >
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-orange-100/50">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-orange-500 to-rose-500 rounded-2xl shadow-lg mb-4">
                             <FaUserPlus className="text-white text-2xl" />
@@ -101,7 +68,7 @@ export default function RegisterPage() {
                     </div>
 
                     {error && (
-                        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 text-sm flex items-center gap-2">
+                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
                             <span className="text-lg">⚠️</span>
                             {error}
                         </div>
@@ -115,6 +82,7 @@ export default function RegisterPage() {
                     )}
 
                     <form onSubmit={handleRegister} className="space-y-5">
+                        {/* Name */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Full Name
@@ -125,12 +93,13 @@ export default function RegisterPage() {
                                     type="text"
                                     required
                                     placeholder="John Doe"
-                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all duration-200 outline-none placeholder-gray-500"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all duration-200 outline-none"
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 />
                             </div>
                         </div>
 
+                        {/* Email */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Email Address
@@ -147,34 +116,30 @@ export default function RegisterPage() {
                             </div>
                         </div>
 
-                        {/* Image Upload - NEW */}
+                        {/* Profile Image URL - Same as Profile Page */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Profile Image (Optional)
+                                Profile Image URL <span className="text-gray-400 font-normal">(Optional)</span>
                             </label>
-                            <div className="flex items-center gap-4">
-                                <label className="flex items-center gap-2 px-4 py-3 bg-gray-100 rounded-xl cursor-pointer hover:bg-gray-200 transition-colors">
-                                    <FaCamera />
-                                    <span>Choose Image</span>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                    />
-                                </label>
-                                {imagePreview && (
-                                    <div className="relative">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Profile preview"
-                                            className="w-12 h-12 object-cover rounded-full border-2 border-orange-200"
-                                        />
-                                    </div>
-                                )}
+                            <div className="relative">
+                                <FaLink className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="url"
+                                    placeholder="https://example.com/photo.jpg"
+                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all duration-200 outline-none"
+                                    onChange={(e) => {
+                                        setFormData({ ...formData, image: e.target.value });
+                                        setImagePreview(e.target.value);
+                                    }}
+                                />
                             </div>
+                           
+                            <p className="text-xs text-gray-400 mt-1.5">
+                                Enter a direct URL to your profile image (e.g., from imgbb, unsplash, etc.)
+                            </p>
                         </div>
 
+                        {/* Password */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Password
@@ -182,12 +147,19 @@ export default function RegisterPage() {
                             <div className="relative">
                                 <FaLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                 <input
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     required
                                     placeholder="Create a strong password"
-                                    className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all duration-200 outline-none"
+                                    className="w-full pl-10 pr-12 py-3 bg-white border border-gray-200 rounded-xl focus:border-orange-400 focus:ring-4 focus:ring-orange-100 transition-all duration-200 outline-none"
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                >
+                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                </button>
                             </div>
                             <p className="text-xs text-gray-400 mt-1.5">
                                 Must be at least 6 characters with one uppercase and one lowercase letter
@@ -215,7 +187,7 @@ export default function RegisterPage() {
                             <div className="w-full border-t border-gray-200"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white/80 text-gray-500">or</span>
+                            <span className="px-4 bg-white text-gray-500">or</span>
                         </div>
                     </div>
 

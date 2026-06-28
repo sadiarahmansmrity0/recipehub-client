@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { FaSearch, FaClock, FaUser, FaHeart } from 'react-icons/fa';
 import api from '@/lib/axios';
 import Loading from '@/components/Loading';
-
+import RecipeCard from '@/components/RecipeCard';
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Drink', 'Soup', 'Salad'];
 const CUISINES = ['All', 'Italian', 'Chinese', 'Mexican', 'Indian', 'Thai', 'Japanese', 'French', 'American', 'Mediterranean'];
 

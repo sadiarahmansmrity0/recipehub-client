@@ -1,14 +1,14 @@
 'use client';
 import { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '@/context/AuthContext'; 
+import { AuthContext } from '@/context/AuthContext';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { FaArrowRight, FaHeart, FaStar, FaUtensils, FaClock } from 'react-icons/fa';
+import { FaArrowRight, FaHeart, FaStar, FaUtensils, FaClock, FaUser } from 'react-icons/fa';
 import api from '@/lib/axios';
+import { FaCrown } from "react-icons/fa";
 
 export default function Home() {
-    const { user } = useContext(AuthContext);  
+    const { user } = useContext(AuthContext);
     const [featuredRecipes, setFeaturedRecipes] = useState([]);
     const [popularRecipes, setPopularRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,8 +20,8 @@ export default function Home() {
                     api.get('/recipes/featured'),
                     api.get('/recipes/popular')
                 ]);
-                setFeaturedRecipes(featuredRes.data);
-                setPopularRecipes(popularRes.data);
+                setFeaturedRecipes(featuredRes.data || []);
+                setPopularRecipes(popularRes.data || []);
             } catch (error) {
                 console.error('Error fetching recipes:', error);
             } finally {
@@ -30,6 +30,70 @@ export default function Home() {
         };
         fetchRecipes();
     }, []);
+
+    // SAME CARD STYLE AS BROWSE PAGE
+    const RecipeCard = ({ recipe, index }) => (
+        <motion.div
+            key={recipe._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+        >
+            <div className="relative h-48">
+                <img
+                    src={recipe.recipeImage || 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=Recipe'}
+                    alt={recipe.recipeName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=Recipe';
+                    }}
+                />
+                {recipe.isFeatured && (
+                    <span className="absolute top-3 right-3 bg-yellow-400 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                        <FaStar className="text-xs" /> Featured
+                    </span>
+                )}
+                <div className="absolute bottom-3 left-3 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                    <FaHeart className="text-rose-400" />
+                    {recipe.likesCount || 0}
+                </div>
+            </div>
+            <div className="p-6">
+                <div className="flex items-center gap-2 text-sm text-gray-500 mb-2 flex-wrap">
+                    <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded">
+                        {recipe.category || 'Uncategorized'}
+                    </span>
+                    <span>•</span>
+                    <span>{recipe.cuisineType || 'Various'}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                        <FaClock className="text-xs" />
+                        {recipe.preparationTime || 0}m
+                    </span>
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 mb-2 line-clamp-1">
+                    {recipe.recipeName}
+                </h3>
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                        <FaUser className="text-xs" />
+                        {recipe.authorName || 'Unknown'}
+                    </span>
+                    <span className="flex items-center gap-1">
+                        <FaClock className="text-xs" />
+                        {recipe.preparationTime || 0}m
+                    </span>
+                </div>
+                <Link
+                    href={`/recipes/${recipe._id}`}
+                    className="mt-4 block w-full text-center bg-gradient-to-r from-orange-500 to-rose-500 text-white py-2 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all"
+                >
+                    View Details
+                </Link>
+            </div>
+        </motion.div>
+    );
 
     return (
         <div className="min-h-screen">
@@ -53,8 +117,7 @@ export default function Home() {
                             href="/recipes"
                             className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all"
                         >
-                            Browse Recipes
-                            <FaArrowRight />
+                            Browse Recipes <FaArrowRight />
                         </Link>
                     </motion.div>
                     <motion.div
@@ -94,76 +157,33 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* Featured Recipes Section */}
-            <section className="py-16 px-6 bg-gray-50">
+            {/* Featured Recipes Section - SAME STYLE AS BROWSE */}
+              <section className="py-16 px-6 bg-gray-50 dark:bg-gray-800/50">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold text-gray-800">Featured Recipes</h2>
-                        <p className="text-gray-600 mt-2">Hand-picked recipes from our community</p>
+                        <h2 className="text-4xl font-bold text-gray-800 dark:text-white">Featured Recipes</h2>
+                        <p className="text-gray-600 dark:text-gray-400 mt-2">Hand-picked recipes from our community</p>
                     </div>
 
                     {loading ? (
                         <div className="flex justify-center py-12">
                             <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
+                    ) : featuredRecipes.length === 0 ? (
+                        <div className="text-center py-12">
+                            <p className="text-gray-500 dark:text-gray-400">No featured recipes available</p>
+                        </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {featuredRecipes.map((recipe, index) => (
-                                <motion.div
-                                    key={recipe._id}
-                                    initial={{ opacity: 0, y: 50 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                                    className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all"
-                                >
-                                    <div className="relative h-48">
-                                        <Image
-                                            src={recipe.recipeImage || '/placeholder.jpg'}
-                                            alt={recipe.recipeName}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                        {recipe.isFeatured && (
-                                            <span className="absolute top-3 right-3 bg-yellow-400 text-gray-800 px-3 py-1 rounded-full text-xs font-semibold">
-                                                ★ Featured
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="p-6">
-                                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                                            <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded">
-                                                {recipe.category}
-                                            </span>
-                                            <span>•</span>
-                                            <span>{recipe.cuisineType}</span>
-                                            <span>•</span>
-                                            <span className="flex items-center gap-1">
-                                                <FaClock className="text-xs" />
-                                                {recipe.preparationTime}m
-                                            </span>
-                                        </div>
-                                        <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                            {recipe.recipeName}
-                                        </h3>
-                                        <p className="text-gray-600 text-sm mb-4">
-                                            by {recipe.authorName}
-                                        </p>
-                                        <Link
-                                            href={`/recipes/${recipe._id}`}
-                                            className="inline-flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700"
-                                        >
-                                            View Details
-                                            <FaArrowRight className="text-sm" />
-                                        </Link>
-                                    </div>
-                                </motion.div>
+                                <RecipeCard key={recipe._id} recipe={recipe} index={index} />
                             ))}
                         </div>
                     )}
                 </div>
             </section>
 
-            {/* Popular Recipes Section */}
+            {/* Popular Recipes Section - SAME STYLE AS BROWSE */}
             <section className="py-16 px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-12">
@@ -171,45 +191,21 @@ export default function Home() {
                         <p className="text-gray-600 mt-2">Most loved recipes by our community</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {popularRecipes.map((recipe, index) => (
-                            <motion.div
-                                key={recipe._id}
-                                initial={{ opacity: 0, y: 50 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all"
-                            >
-                                <div className="relative h-48">
-                                    <Image
-                                        src={recipe.recipeImage || '/placeholder.jpg'}
-                                        alt={recipe.recipeName}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                    <div className="absolute top-3 right-3 bg-rose-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                                        <FaHeart className="text-xs" />
-                                        {recipe.likesCount}
-                                    </div>
-                                </div>
-                                <div className="p-6">
-                                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                        {recipe.recipeName}
-                                    </h3>
-                                    <p className="text-gray-600 text-sm">
-                                        by {recipe.authorName}
-                                    </p>
-                                    <Link
-                                        href={`/recipes/${recipe._id}`}
-                                        className="inline-flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700 mt-4"
-                                    >
-                                        View Details
-                                        <FaArrowRight className="text-sm" />
-                                    </Link>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                    {loading ? (
+                        <div className="flex justify-center py-12">
+                            <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    ) : popularRecipes.length === 0 ? (
+                        <div className="text-center py-12">
+                            <p className="text-gray-500">No popular recipes available</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {popularRecipes.map((recipe, index) => (
+                                <RecipeCard key={recipe._id} recipe={recipe} index={index} />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -220,13 +216,13 @@ export default function Home() {
                     <p className="text-xl mb-8 opacity-90">
                         Join our community of food lovers and start sharing your culinary creations
                     </p>
-                       <Link
-        href={user ? '/dashboard' : '/register'}
-        className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all"
-    >
-        {user ? 'Go to Dashboard' : 'Get Started'}
-        <FaArrowRight />
-    </Link>
+                    <Link
+                        href={user ? '/dashboard' : '/register'}
+                        className="inline-flex items-center gap-2 bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transition-all"
+                    >
+                        {user ? 'Go to Dashboard' : 'Get Started'}
+                        <FaArrowRight />
+                    </Link>
                 </div>
             </section>
         </div>
