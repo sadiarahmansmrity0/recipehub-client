@@ -14,20 +14,21 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchRecipes = async () => {
-            try {
-                const [featuredRes, popularRes] = await Promise.all([
-                    api.get('/recipes/featured'),
-                    api.get('/recipes/popular')
-                ]);
-                setFeaturedRecipes(featuredRes.data || []);
-                setPopularRecipes(popularRes.data || []);
-            } catch (error) {
-                console.error('Error fetching recipes:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+       const fetchRecipes = async () => {
+    try {
+        console.log('📡 Fetching from:', 'https://sportnest-server-7bbz.onrender.com/api');
+        const [featuredRes, popularRes] = await Promise.all([
+            api.get('/recipes/featured'),
+            api.get('/recipes/popular')
+        ]);
+        setFeaturedRecipes(featuredRes.data || []);
+        setPopularRecipes(popularRes.data || []);
+    } catch (error) {
+        console.error('Error:', error.message);
+    } finally {
+        setLoading(false);
+    }
+};
         fetchRecipes();
     }, []);
 
