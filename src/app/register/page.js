@@ -36,10 +36,10 @@ export default function RegisterPage() {
             );
 
             if (result.success) {
-                setSuccess('Registration successful!');
-                setTimeout(() => {
-                    router.push('/dashboard');
-                }, 1500);
+               setSuccess('Registration successful! Redirecting to login...');
+setTimeout(() => {
+    router.push('/login'); // ← Change from /dashboard to /login
+}, 2000);
             } else {
                 setError(result.message || 'Registration failed');
             }

@@ -13,12 +13,15 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
+                console.log('Checking auth...');
                 const response = await api.get('/auth/me');
-                console.log('Auth check - User data:', response.data);
+                console.log('Auth check response:', response.data);
                 setUser(response.data);
             } catch (error) {
-                if (error.response?.status !== 401) {
-                    console.error('Auth check error:', error);
+                if (error.response?.status === 401) {
+                    console.log('Not authenticated');
+                } else {
+                    console.error('Auth check error:', error.message);
                 }
                 setUser(null);
             } finally {
@@ -28,31 +31,52 @@ export const AuthProvider = ({ children }) => {
 
         checkAuth();
     }, []);
-
-    const login = async (email, password) => {
-        try {
-            const response = await api.post('/auth/login', { email, password });
-            console.log('Login - User data:', response.data.user);
+const login = async (email, password) => {
+    try {
+        console.log('🔐 Login attempt:', email);
+        console.log('🔗 API URL:', api.defaults.baseURL);
+        
+        const response = await api.post('/auth/login', { email, password });
+        console.log('✅ Login response status:', response.status);
+        console.log('✅ Login response data:', response.data);
+        
+        if (response.data.success && response.data.user) {
             setUser(response.data.user);
-            return { success: true };
-        } catch (error) {
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Login failed' 
-            };
+            console.log('✅ User set in context');
+            return { success: true, user: response.data.user };
+        } else {
+            console.log('❌ Invalid response structure:', response.data);
+            return { success: false, message: 'Invalid response from server' };
         }
-    };
+    } catch (error) {
+        console.error('❌ Login error details:');
+        console.error('  - Status:', error.response?.status);
+        console.error('  - Data:', error.response?.data);
+        console.error('  - Message:', error.message);
+        
+        return { 
+            success: false, 
+            message: error.response?.data?.message || 'Login failed. Please try again.'
+        };
+    }
+};
 
     const register = async (name, email, password, image) => {
         try {
+            console.log('📝 Register attempt:', email);
             const response = await api.post('/auth/register', { name, email, password, image });
-            console.log('Register - User data:', response.data.user);
-            setUser(response.data.user);
-            return { success: true };
+            console.log('✅ Register response:', response.data);
+            
+            if (response.data.success && response.data.user) {
+                setUser(response.data.user);
+                return { success: true };
+            }
+            return { success: false, message: 'Registration failed' };
         } catch (error) {
+            console.error('❌ Register error:', error.response?.data || error.message);
             return { 
                 success: false, 
-                message: error.response?.data?.message || 'Registration failed' 
+                message: error.response?.data?.message || 'Registration failed'
             };
         }
     };
@@ -71,20 +95,13 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.put('/auth/profile', data);
             if (response.data.success) {
-                console.log('Profile update - New data:', response.data.user);
-                setUser(prev => ({
-                    ...prev,
-                    ...response.data.user
-                }));
+                setUser(prev => ({ ...prev, ...response.data.user }));
                 return { success: true, user: response.data.user };
             }
             return { success: false, message: 'Update failed' };
         } catch (error) {
-            console.error('Profile update error:', error);
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Update failed' 
-            };
+            console.error('Update profile error:', error);
+            return { success: false, message: error.response?.data?.message || 'Update failed' };
         }
     };
 

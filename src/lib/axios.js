@@ -1,24 +1,50 @@
 import axios from 'axios';
 
-// Determine the API URL based on environment
-const API_URL = process.env.NODE_ENV === 'production' 
-    ? process.env.NEXT_PUBLIC_API_URL  // Production URL from env
-    : 'http://localhost:5000/api';      // Development URL
+// ✅ Get the correct API URL
+const getApiUrl = () => {
+    // Production - use environment variable
+    if (process.env.NODE_ENV === 'production') {
+        return process.env.NEXT_PUBLIC_API_URL || 'https://your-render-app.onrender.com/api';
+    }
+    // Development
+    return 'http://localhost:5000/api';
+};
 
 const api = axios.create({
-    baseURL: API_URL,
+    baseURL: getApiUrl(),
     withCredentials: true,
     headers: {
-        'Content-Type': 'application/json'
-    }
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    },
+    timeout: 30000, // 30 seconds timeout
 });
 
-// Response interceptor for debugging
+// ✅ Request interceptor - log all requests
+api.interceptors.request.use(
+    (config) => {
+        console.log(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
+        return config;
+    },
+    (error) => {
+        console.error('Request Error:', error);
+        return Promise.reject(error);
+    }
+);
+
+// ✅ Response interceptor - log all responses
 api.interceptors.response.use(
-    response => response,
-    error => {
-        if (error.response?.status !== 401) {
-            console.error('API Error:', error.response?.status, error.response?.data);
+    (response) => {
+        console.log(`✅ ${response.status} ${response.config.url}`);
+        return response;
+    },
+    (error) => {
+        if (error.response) {
+            console.error(`❌ ${error.response.status} ${error.config?.url}`, error.response.data);
+        } else if (error.request) {
+            console.error('❌ No response received:', error.request);
+        } else {
+            console.error('❌ Error:', error.message);
         }
         return Promise.reject(error);
     }
