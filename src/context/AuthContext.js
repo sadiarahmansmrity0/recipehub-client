@@ -1,22 +1,28 @@
 'use client';
 import { createContext, useState, useEffect } from 'react';
 import api from '@/lib/axios';
+import { useRouter } from 'next/navigation';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                console.log('🔍 Checking auth...');
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setLoading(false);
+                    return;
+                }
+
                 const response = await api.get('/auth/me');
-                console.log('✅ Auth check - User:', response.data);
                 setUser(response.data);
             } catch (error) {
-                console.log('ℹ️ Not authenticated');
+                localStorage.removeItem('token');
                 setUser(null);
             } finally {
                 setLoading(false);
@@ -27,48 +33,38 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            console.log('🔐 Login attempt:', email);
             const response = await api.post('/auth/login', { email, password });
-            console.log('✅ Login response:', response.data);
-            
-            if (response.data.success && response.data.user) {
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
                 setUser(response.data.user);
-                return { success: true, user: response.data.user };
+                return { success: true };
             }
-            return { success: false, message: 'Invalid credentials' };
+            return { success: false, message: 'Login failed' };
         } catch (error) {
-            console.error('❌ Login error:', error.response?.data || error.message);
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Login failed' 
-            };
+            return { success: false, message: error.response?.data?.message || 'Login failed' };
         }
     };
 
     const register = async (name, email, password, image) => {
         try {
-            console.log('📝 Register attempt:', email);
             const response = await api.post('/auth/register', { name, email, password, image });
-            console.log('✅ Register response:', response.data);
-            
-            if (response.data.success && response.data.user) {
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
                 setUser(response.data.user);
                 return { success: true };
             }
             return { success: false, message: 'Registration failed' };
         } catch (error) {
-            console.error('❌ Register error:', error.response?.data || error.message);
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Registration failed' 
-            };
+            return { success: false, message: error.response?.data?.message || 'Registration failed' };
         }
     };
 
     const logout = async () => {
         try {
             await api.post('/auth/logout');
+            localStorage.removeItem('token');
             setUser(null);
+            router.push('/login');
         } catch (error) {
             console.error('Logout error:', error);
         }
@@ -76,25 +72,25 @@ export const AuthProvider = ({ children }) => {
 
     const updateProfile = async (data) => {
         try {
-            const response = await api.put('/auth/profile', data);
+            const response = await api.patch('/auth/profile', { ...data });
             if (response.data.success) {
-                setUser(prev => ({ ...prev, ...response.data.user }));
-                return { success: true, user: response.data.user };
+                setUser(prev => ({ ...prev, ...data }));
+                return { success: true };
             }
-            return { success: false, message: 'Update failed' };
+            return { success: false };
         } catch (error) {
             console.error('Update error:', error);
-            return { success: false, message: error.response?.data?.message || 'Update failed' };
+            return { success: false };
         }
     };
 
     return (
-        <AuthContext.Provider value={{ 
-            user, 
-            setUser, 
-            loading, 
-            login, 
-            register, 
+        <AuthContext.Provider value={{
+            user,
+            setUser,
+            loading,
+            login,
+            register,
             logout,
             updateProfile
         }}>
