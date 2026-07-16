@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// ✅ ADD /api to the URL
+const API_URL = 'https://recipehub-server-dr3a.onrender.com/api';
+
+console.log('🔗 API URL:', API_URL);
 
 const api = axios.create({
     baseURL: API_URL,
@@ -10,7 +13,7 @@ const api = axios.create({
     },
 });
 
-// ✅ Add token to requests
+// Add token to requests
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
