@@ -11,9 +11,12 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await api.get('/auth/me');
-                setUser(res.data);
-            } catch {
+                console.log('🔍 Checking auth...');
+                const response = await api.get('/auth/me');
+                console.log('✅ Auth check - User:', response.data);
+                setUser(response.data);
+            } catch (error) {
+                console.log('ℹ️ Not authenticated');
                 setUser(null);
             } finally {
                 setLoading(false);
@@ -24,27 +27,41 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const res = await api.post('/auth/login', { email, password });
-            if (res.data.success) {
-                setUser(res.data.user);
-                return { success: true };
+            console.log('🔐 Login attempt:', email);
+            const response = await api.post('/auth/login', { email, password });
+            console.log('✅ Login response:', response.data);
+            
+            if (response.data.success && response.data.user) {
+                setUser(response.data.user);
+                return { success: true, user: response.data.user };
             }
             return { success: false, message: 'Invalid credentials' };
         } catch (error) {
-            return { success: false, message: error.response?.data?.message || 'Login failed' };
+            console.error('❌ Login error:', error.response?.data || error.message);
+            return { 
+                success: false, 
+                message: error.response?.data?.message || 'Login failed' 
+            };
         }
     };
 
     const register = async (name, email, password, image) => {
         try {
-            const res = await api.post('/auth/register', { name, email, password, image });
-            if (res.data.success) {
-                setUser(res.data.user);
+            console.log('📝 Register attempt:', email);
+            const response = await api.post('/auth/register', { name, email, password, image });
+            console.log('✅ Register response:', response.data);
+            
+            if (response.data.success && response.data.user) {
+                setUser(response.data.user);
                 return { success: true };
             }
             return { success: false, message: 'Registration failed' };
         } catch (error) {
-            return { success: false, message: error.response?.data?.message || 'Registration failed' };
+            console.error('❌ Register error:', error.response?.data || error.message);
+            return { 
+                success: false, 
+                message: error.response?.data?.message || 'Registration failed' 
+            };
         }
     };
 
@@ -59,19 +76,28 @@ export const AuthProvider = ({ children }) => {
 
     const updateProfile = async (data) => {
         try {
-            const res = await api.put('/auth/profile', data);
-            if (res.data.success) {
-                setUser(prev => ({ ...prev, ...res.data.user }));
-                return { success: true };
+            const response = await api.put('/auth/profile', data);
+            if (response.data.success) {
+                setUser(prev => ({ ...prev, ...response.data.user }));
+                return { success: true, user: response.data.user };
             }
-            return { success: false };
+            return { success: false, message: 'Update failed' };
         } catch (error) {
-            return { success: false };
+            console.error('Update error:', error);
+            return { success: false, message: error.response?.data?.message || 'Update failed' };
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, setUser, loading, login, register, logout, updateProfile }}>
+        <AuthContext.Provider value={{ 
+            user, 
+            setUser, 
+            loading, 
+            login, 
+            register, 
+            logout,
+            updateProfile
+        }}>
             {!loading && children}
         </AuthContext.Provider>
     );

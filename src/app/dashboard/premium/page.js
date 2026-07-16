@@ -3,22 +3,9 @@ import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import {
-    FaCrown,
-    FaCheck,
-    FaArrowRight,
-    FaStar,
-    FaUtensils,
-    FaHeart,
-    FaShieldAlt,
-    FaRocket,
-    FaSpinner
-} from 'react-icons/fa';
-import { loadStripe } from '@stripe/stripe-js';
+import { FaCrown, FaCheck, FaArrowRight, FaSpinner } from 'react-icons/fa';
 import api from '@/lib/axios';
 import Loading from '@/components/Loading';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export default function Premium() {
     const { user, loading: authLoading } = useContext(AuthContext);
@@ -34,38 +21,38 @@ export default function Premium() {
         if (user?.isPremium) {
             router.push('/dashboard');
         }
-    }, [user, authLoading]);
+    }, [user, authLoading, router]);
 
     const handleUpgrade = async () => {
         setLoading(true);
         setError('');
 
         try {
+            console.log('🚀 Creating Stripe checkout...');
+            
             const response = await api.post('/payment/premium', {
                 success_url: `${window.location.origin}/dashboard/premium/success`,
                 cancel_url: `${window.location.origin}/dashboard/premium`
             });
 
+            console.log('📥 Response:', response.data);
+
             if (response.data.url) {
+                console.log('🔗 Redirecting to Stripe:', response.data.url);
                 window.location.href = response.data.url;
             } else {
-                const stripe = await stripePromise;
-                const { error } = await stripe.redirectToCheckout({
-                    sessionId: response.data.sessionId
-                });
-                if (error) {
-                    setError(error.message);
-                }
+                setError('Failed to create checkout session');
+                setLoading(false);
             }
         } catch (error) {
-            console.error('Premium checkout error:', error);
+            console.error('❌ Error:', error);
             setError(error.response?.data?.message || 'Failed to start checkout');
-        } finally {
             setLoading(false);
         }
     };
 
     if (authLoading) return <Loading />;
+    if (user?.isPremium) return null;
 
     return (
         <div className="max-w-6xl mx-auto px-4 py-12">
@@ -74,7 +61,6 @@ export default function Premium() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                {/* Header */}
                 <div className="text-center mb-12">
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-2xl shadow-lg mb-4">
                         <FaCrown className="text-white text-4xl" />
@@ -89,7 +75,6 @@ export default function Premium() {
                     </div>
                 )}
 
-                {/* Features Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                     <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 text-center">
                         <div className="text-4xl mb-4">📝</div>
@@ -108,7 +93,6 @@ export default function Premium() {
                     </div>
                 </div>
 
-                {/* Pricing Card */}
                 <div className="max-w-lg mx-auto">
                     <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-3xl p-8 border-2 border-yellow-200 shadow-xl">
                         <div className="text-center">
@@ -117,58 +101,25 @@ export default function Premium() {
                                 <span className="text-5xl font-bold text-gray-800">$9.99</span>
                                 <span className="text-gray-500 text-sm"> / one-time</span>
                             </div>
-                            <p className="text-gray-600 text-sm">Lifetime access to premium features</p>
                         </div>
 
                         <div className="my-6 space-y-3">
-                            <div className="flex items-center gap-3">
-                                <FaCheck className="text-green-500 flex-shrink-0" />
-                                <span className="text-gray-700">Unlimited recipe uploads</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <FaCheck className="text-green-500 flex-shrink-0" />
-                                <span className="text-gray-700">Premium profile badge</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <FaCheck className="text-green-500 flex-shrink-0" />
-                                <span className="text-gray-700">Priority support</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <FaCheck className="text-green-500 flex-shrink-0" />
-                                <span className="text-gray-700">Exclusive community access</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <FaCheck className="text-green-500 flex-shrink-0" />
-                                <span className="text-gray-700">No ads</span>
-                            </div>
+                            <div className="flex items-center gap-3"><FaCheck className="text-green-500" /><span>Unlimited recipe uploads</span></div>
+                            <div className="flex items-center gap-3"><FaCheck className="text-green-500" /><span>Premium profile badge</span></div>
+                            <div className="flex items-center gap-3"><FaCheck className="text-green-500" /><span>Priority support</span></div>
+                            <div className="flex items-center gap-3"><FaCheck className="text-green-500" /><span>Exclusive community access</span></div>
                         </div>
 
                         <button
                             onClick={handleUpgrade}
                             disabled={loading}
-                            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-white py-4 rounded-xl font-bold text-lg hover:from-yellow-500 hover:to-yellow-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            {loading ? (
-                                <FaSpinner className="animate-spin" />
-                            ) : (
-                                <>
-                                    Upgrade Now
-                                    <FaArrowRight />
-                                </>
-                            )}
+                            {loading ? <FaSpinner className="animate-spin" /> : <>Upgrade Now <FaArrowRight /></>}
                         </button>
 
-                        <p className="text-center text-xs text-gray-400 mt-4">
-                            Secure payment powered by Stripe
-                        </p>
+                        <p className="text-center text-xs text-gray-400 mt-4">Secure payment powered by Stripe</p>
                     </div>
-                </div>
-
-                {/* Trust Badges */}
-                <div className="flex justify-center gap-8 mt-8 text-gray-400 text-sm">
-                    <span>🔒 Secure Payment</span>
-                    <span>💳 Credit Card</span>
-                    <span>🛡️ 100% Protected</span>
                 </div>
             </motion.div>
         </div>

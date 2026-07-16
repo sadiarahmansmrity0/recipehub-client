@@ -36,7 +36,7 @@ export default function RegisterPage() {
             );
 
             if (result.success) {
-               setSuccess('Registration successful! Redirecting to login...');
+               setSuccess('Registration successful! Redirecting to dashboard...');
 setTimeout(() => {
     router.push('/login'); // ← Change from /dashboard to /login
 }, 2000);

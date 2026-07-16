@@ -4,7 +4,7 @@ import { AuthContext } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { FaShoppingCart, FaClock, FaUser, FaEye, FaArrowLeft } from 'react-icons/fa';
+import { FaShoppingCart, FaClock, FaUser, FaEye, FaSpinner } from 'react-icons/fa';
 import api from '@/lib/axios';
 import Loading from '@/components/Loading';
 
@@ -20,20 +20,21 @@ export default function PurchasedRecipes() {
             router.push('/login');
             return;
         }
-        fetchPurchased();
+        if (user) {
+            fetchPurchased();
+        }
     }, [user, authLoading, router]);
 
     const fetchPurchased = async () => {
         try {
+            setLoading(true);
+            console.log('📡 Fetching purchased recipes...');
             const response = await api.get('/payment/purchased');
+            console.log('📥 Purchased recipes:', response.data);
             setRecipes(response.data || []);
         } catch (error) {
-            console.error('Error fetching purchased:', error);
-            if (error.response?.status === 404) {
-                setRecipes([]);
-            } else {
-                setError('Failed to load purchased recipes');
-            }
+            console.error('❌ Error fetching purchased:', error);
+            setError('Failed to load purchased recipes');
         } finally {
             setLoading(false);
         }
@@ -43,23 +44,20 @@ export default function PurchasedRecipes() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Header */}
             <div className="flex items-center gap-3 mb-8">
-                <button
-                    onClick={() => router.back()}
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                    <FaArrowLeft />
-                </button>
-                <div className="flex items-center gap-3">
-                    <FaShoppingCart className="text-blue-500 text-3xl" />
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Purchased Recipes</h1>
-                        <p className="text-gray-600 mt-1">
-                            {recipes.length} purchased recipe{recipes.length !== 1 ? 's' : ''}
-                        </p>
-                    </div>
+                <FaShoppingCart className="text-blue-500 text-3xl" />
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-800">Purchased Recipes</h1>
+                    <p className="text-gray-600 mt-1">
+                        {recipes.length} purchased recipe{recipes.length !== 1 ? 's' : ''}
+                    </p>
                 </div>
+                <button
+                    onClick={fetchPurchased}
+                    className="ml-auto px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all text-sm"
+                >
+                    Refresh
+                </button>
             </div>
 
             {error && (
@@ -88,27 +86,30 @@ export default function PurchasedRecipes() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                            className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
                         >
-                            <div className="relative h-48">
+                            <div className="relative h-48 bg-gray-200">
                                 <img
                                     src={recipe.recipeImage || 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=Recipe'}
                                     alt={recipe.recipeName}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/400x300/FF6B35/FFFFFF?text=Recipe';
+                                    }}
                                 />
-                                <span className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                <span className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-md">
                                     ✅ Purchased
                                 </span>
                             </div>
-                            <div className="p-6">
-                                <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                                    <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded">
+                            <div className="p-5">
+                                <div className="flex items-center gap-2 text-xs text-gray-500 mb-2 flex-wrap">
+                                    <span className="bg-orange-100 text-orange-600 px-2.5 py-1 rounded-full">
                                         {recipe.category || 'Uncategorized'}
                                     </span>
                                     <span>•</span>
                                     <span>{recipe.cuisineType || 'Various'}</span>
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2 line-clamp-1">
+                                <h3 className="text-lg font-bold text-gray-800 mb-1 truncate">
                                     {recipe.recipeName}
                                 </h3>
                                 <div className="flex items-center justify-between text-sm text-gray-500">
@@ -118,12 +119,12 @@ export default function PurchasedRecipes() {
                                     </span>
                                     <span className="flex items-center gap-1">
                                         <FaClock className="text-xs" />
-                                        {recipe.preparationTime || 'N/A'}m
+                                        {recipe.preparationTime || 0}m
                                     </span>
                                 </div>
                                 <Link
                                     href={`/recipes/${recipe._id}`}
-                                    className="mt-4 block w-full text-center bg-gradient-to-r from-orange-500 to-rose-500 text-white py-2 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all flex items-center justify-center gap-2"
+                                    className="mt-4 block w-full text-center bg-gradient-to-r from-orange-500 to-rose-500 text-white py-2.5 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all flex items-center justify-center gap-2 text-sm"
                                 >
                                     <FaEye /> View Recipe
                                 </Link>

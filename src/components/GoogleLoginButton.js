@@ -53,6 +53,7 @@ export default function GoogleLoginButton({ onSuccess, onError, buttonText = 'Co
         flow: 'implicit',
         ux_mode: 'popup',
     });
+    
 
     return (
         <div className="w-full">
