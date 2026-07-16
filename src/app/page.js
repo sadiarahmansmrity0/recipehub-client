@@ -12,7 +12,40 @@ export default function Home() {
     const [featuredRecipes, setFeaturedRecipes] = useState([]);
     const [popularRecipes, setPopularRecipes] = useState([]);
     const [loading, setLoading] = useState(true);
-
+ 
+    if (loading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    );
+}
+    const fetchRecipes = async () => {
+    try {
+        console.log('📡 Fetching from:', api.defaults.baseURL);
+        console.log('📡 Fetching featured recipes...');
+        
+        const [featuredRes, popularRes] = await Promise.all([
+            api.get('/recipes/featured'),
+            api.get('/recipes/popular')
+        ]);
+        
+        console.log('✅ Featured:', featuredRes.data);
+        console.log('✅ Popular:', popularRes.data);
+        
+        setFeaturedRecipes(featuredRes.data || []);
+        setPopularRecipes(popularRes.data || []);
+    } catch (error) {
+        console.error('❌ Error fetching recipes:');
+        console.error('  Message:', error.message);
+        console.error('  Response:', error.response?.data);
+        console.error('  Status:', error.response?.status);
+        setFeaturedRecipes([]);
+        setPopularRecipes([]);
+    } finally {
+        setLoading(false);
+    }
+};
     useEffect(() => {
        const fetchRecipes = async () => {
     try {

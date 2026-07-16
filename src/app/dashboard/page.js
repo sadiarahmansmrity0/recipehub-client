@@ -43,7 +43,14 @@ export default function Dashboard() {
         if (user) fetchData();
     }, [user, authLoading, router]);
 
-    if (authLoading || loading) return <Loading />;
+    // Custom spinner while loading
+    if (authLoading || loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -89,6 +96,10 @@ export default function Dashboard() {
                     );
                 })}
             </div>
+
+            {/* Debug logs */}
+            {console.log('📊 Dashboard stats:', stats)}
+            {console.log('📝 Recent recipes:', userRecipes)}
 
             {/* Two Columns */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
