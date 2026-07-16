@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// ✅ FIX: Use the correct URL
-const API_URL = 'http://localhost:5000/api';
+// ✅ HARDCODE YOUR RENDER URL
+const API_URL = 'https://recipehub-server-dr3a.onrender.com/api';
+
+console.log('🔗 API URL:', API_URL);
 
 const api = axios.create({
     baseURL: API_URL,
@@ -11,7 +13,5 @@ const api = axios.create({
         'Accept': 'application/json',
     },
 });
-
-console.log('🔗 API URL:', API_URL);
 
 export default api;
