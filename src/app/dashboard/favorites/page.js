@@ -1,130 +1,124 @@
 'use client';
-import { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+
+import React, { useState, useEffect } from 'react';
+import { useApp } from '@/context/AppContext';
+import { Heart, Trash2, Clock, Loader2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { FaHeart, FaClock, FaUser, FaTrash } from 'react-icons/fa';
-import api from '@/lib/axios';
-import Loading from '@/components/Loading';
 
 export default function Favorites() {
-    const { user, loading: authLoading } = useContext(AuthContext);
-    const router = useRouter();
-    const [favorites, setFavorites] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const { fetchWithAuth, favorites, fetchFavorites } = useApp();
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-            return;
-        }
+  useEffect(() => {
+    const loadFavs = async () => {
+      setLoading(true);
+      await fetchFavorites();
+      setLoading(false);
+    };
+    loadFavs();
+  }, []);
+
+  const handleRemove = async (recipeId) => {
+    if (!window.confirm("Remove this recipe from your favorites?")) return;
+
+    try {
+      const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_BASE_URL}/api/favorites/${recipeId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
         fetchFavorites();
-    }, [user, authLoading]);
+      } else {
+        alert("Failed to remove from favorites.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error removing favorite.");
+    }
+  };
 
-    const fetchFavorites = async () => {
-        try {
-            const response = await api.get('/recipes/user/favorites');
-            setFavorites(response.data);
-        } catch (error) {
-            console.error('Error fetching favorites:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const removeFavorite = async (recipeId) => {
-        try {
-            await api.post(`/recipes/${recipeId}/favorite`);
-            setFavorites(favorites.filter(r => r._id !== recipeId));
-        } catch (error) {
-            console.error('Error removing favorite:', error);
-        }
-    };
-
-    if (authLoading || loading) return <Loading />;
-
+  if (loading) {
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="flex items-center gap-3 mb-8">
-                <FaHeart className="text-rose-500 text-3xl" />
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-800">My Favorites</h1>
-                    <p className="text-gray-600 mt-1">
-                        {favorites.length} saved recipe{favorites.length !== 1 ? 's' : ''}
-                    </p>
-                </div>
-            </div>
-
-            {favorites.length === 0 ? (
-                <div className="text-center py-16 bg-gray-50 rounded-2xl">
-                    <div className="text-6xl mb-4">❤️</div>
-                    <h3 className="text-2xl font-semibold text-gray-600">No favorites yet</h3>
-                    <p className="text-gray-400 mt-2">Start saving recipes you love!</p>
-                    <Link
-                        href="/recipes"
-                        className="inline-flex items-center gap-2 mt-4 bg-gradient-to-r from-orange-500 to-rose-500 text-white px-6 py-3 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all"
-                    >
-                        Browse Recipes
-                    </Link>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {favorites.map((recipe, index) => (
-                        <motion.div
-                            key={recipe._id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
-                        >
-                            <div className="relative h-48">
-                                <Image
-                                    src={recipe.recipeImage || '/placeholder.jpg'}
-                                    alt={recipe.recipeName}
-                                    fill
-                                    className="object-cover"
-                                />
-                                <button
-                                    onClick={() => removeFavorite(recipe._id)}
-                                    className="absolute top-3 right-3 bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-all shadow-lg"
-                                >
-                                    <FaTrash className="text-sm" />
-                                </button>
-                            </div>
-                            <div className="p-6">
-                                <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                                    <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded">
-                                        {recipe.category}
-                                    </span>
-                                    <span>•</span>
-                                    <span>{recipe.cuisineType}</span>
-                                </div>
-                                <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                                    {recipe.recipeName}
-                                </h3>
-                                <div className="flex items-center justify-between text-sm text-gray-500">
-                                    <span className="flex items-center gap-1">
-                                        <FaUser className="text-xs" />
-                                        {recipe.authorName}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <FaClock className="text-xs" />
-                                        {recipe.preparationTime}m
-                                    </span>
-                                </div>
-                                <Link
-                                    href={`/recipes/${recipe._id}`}
-                                    className="mt-4 block w-full text-center bg-gradient-to-r from-orange-500 to-rose-500 text-white py-2 rounded-xl font-semibold hover:from-orange-600 hover:to-rose-600 transition-all"
-                                >
-                                    View Details
-                                </Link>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-            )}
-        </div>
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <Loader2 size={30} className="text-brand animate-spin" />
+      </div>
     );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="border-b border-border-custom pb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground-custom tracking-tight">Favorites</h1>
+        <p className="text-foreground-custom/60 text-sm">A collection of recipes you've bookmarked to cook later.</p>
+      </div>
+
+      {favorites.length === 0 ? (
+        <div className="border border-dashed border-border-custom bg-card-custom p-16 rounded-3xl text-center space-y-4">
+          <Heart className="mx-auto text-foreground-custom/30" size={48} />
+          <h3 className="text-lg font-bold text-foreground-custom">No favorite recipes</h3>
+          <p className="text-sm text-foreground-custom/60 max-w-sm mx-auto">
+            You haven't bookmarked any recipes yet. Browse recipes to find your favorite dishes!
+          </p>
+          <Link
+            href="/recipes"
+            className="inline-block bg-brand hover:bg-brand-hover text-white text-sm font-semibold px-6 py-2.5 rounded-full"
+          >
+            Browse Recipes
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {favorites.map((fav) => (
+            <div
+              key={fav._id}
+              className="bg-card-custom border border-border-custom rounded-2xl overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
+            >
+              <div className="h-40 w-full overflow-hidden relative">
+                <img
+                  src={fav.recipeImage}
+                  alt={fav.recipeName}
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute top-3 right-3 bg-brand text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                  {fav.category}
+                </span>
+              </div>
+
+              <div className="p-5 flex flex-col flex-grow space-y-4">
+                <div>
+                  <span className="text-[10px] text-brand font-bold uppercase tracking-wider">{fav.cuisineType}</span>
+                  <h3 className="text-base font-bold text-foreground-custom truncate mt-0.5">{fav.recipeName}</h3>
+                  <p className="text-xs text-foreground-custom/50 mt-1">Author: {fav.authorName}</p>
+                </div>
+
+                <div className="flex items-center text-xs text-foreground-custom/60 space-x-4">
+                  <div className="flex items-center space-x-1">
+                    <Clock size={14} className="text-brand/80" />
+                    <span>{fav.preparationTime}m Prep</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-3 border-t border-border-custom mt-auto">
+                  <Link
+                    href={`/recipes/${fav.recipeId}`}
+                    className="text-xs font-bold text-brand hover:underline mr-auto flex items-center gap-1 group"
+                  >
+                    <span>View Details</span>
+                    <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                  </Link>
+
+                  <button
+                    onClick={() => handleRemove(fav.recipeId)}
+                    className="p-2 border border-border-custom rounded-xl hover:bg-red-50 dark:hover:bg-red-950/25 text-red-500 transition-colors"
+                    title="Remove from favorites"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

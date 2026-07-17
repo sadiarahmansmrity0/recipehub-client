@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
-import { ChefHat, Edit, Trash2, Clock, Check, Plus, Loader2, X, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { ChefHat, Edit, Trash2, Star, Check, Plus, Loader2, X } from 'lucide-react';
 
-export default function MyRecipes() {
+export default function ManageRecipes() {
   const { user, fetchWithAuth } = useApp();
+  const router = useRouter();
+
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [actionId, setActionId] = useState(null);
 
-  // Editing State
+  // Edit Modal State
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [editFormData, setEditFormData] = useState({
     recipeName: '',
@@ -21,34 +23,34 @@ export default function MyRecipes() {
     difficultyLevel: 'Easy',
     preparationTime: '',
     instructions: '',
-    isPremium: false,
   });
   const [editIngredients, setEditIngredients] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const fetchMyRecipes = async () => {
+  const fetchRecipes = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/recipes`);
+      const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/recipes`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          // Filter recipes created by the current user
-          const own = data.data.filter(r => r.authorEmail === user?.email);
-          setRecipes(own);
+          setRecipes(data.data);
         }
       }
     } catch (err) {
       console.error(err);
-      setError('Failed to fetch recipes.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (user && user.role !== 'admin') {
+      router.push('/');
+      return;
+    }
     if (user) {
-      fetchMyRecipes();
+      fetchRecipes();
     }
   }, [user]);
 
@@ -56,7 +58,7 @@ export default function MyRecipes() {
     if (!window.confirm("Are you sure you want to delete this recipe?")) return;
 
     try {
-      const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_BASE_URL}/api/recipes/${id}`, {
+      const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/recipes/${id}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -66,11 +68,28 @@ export default function MyRecipes() {
       }
     } catch (err) {
       console.error(err);
-      alert("Error deleting recipe.");
     }
   };
 
-  // Open Edit Modal
+  const toggleFeature = async (recipe) => {
+    const isFeatured = !recipe.isFeatured;
+    setActionId(recipe._id);
+    try {
+      const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/recipes/${recipe._id}/feature`, {
+        method: 'PUT',
+        body: JSON.stringify({ isFeatured })
+      });
+      if (res.ok) {
+        setRecipes(recipes.map(r => r._id === recipe._id ? { ...r, isFeatured } : r));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  // Open Edit modal
   const startEdit = (recipe) => {
     setEditingRecipe(recipe);
     setEditFormData({
@@ -81,14 +100,12 @@ export default function MyRecipes() {
       difficultyLevel: recipe.difficultyLevel || 'Easy',
       preparationTime: recipe.preparationTime,
       instructions: recipe.instructions,
-      isPremium: recipe.isPremium || false,
     });
     setEditIngredients(recipe.ingredients || []);
   };
 
   const handleEditChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setEditFormData({ ...editFormData, [e.target.name]: value });
+    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   };
 
   const handleIngredientChange = (index, value) => {
@@ -123,13 +140,12 @@ export default function MyRecipes() {
 
       if (res.ok) {
         setEditingRecipe(null);
-        fetchMyRecipes();
+        fetchRecipes();
       } else {
         alert("Failed to update recipe.");
       }
     } catch (err) {
       console.error(err);
-      alert("Error updating recipe.");
     } finally {
       setIsUpdating(false);
     }
@@ -145,101 +161,96 @@ export default function MyRecipes() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-custom pb-6">
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground-custom tracking-tight">My Recipes</h1>
-          <p className="text-foreground-custom/60 text-sm">View, update, and manage your published creations.</p>
-        </div>
-        <Link
-          href="/dashboard/add-recipe"
-          className="bg-brand hover:bg-brand-hover text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all self-start"
-        >
-          Add New Recipe
-        </Link>
+      <div className="border-b border-border-custom pb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground-custom tracking-tight">Manage Recipes</h1>
+        <p className="text-foreground-custom/60 text-sm">Review, feature, edit, or delete platform recipes.</p>
       </div>
 
-      {recipes.length === 0 ? (
-        <div className="border border-dashed border-border-custom bg-card-custom p-16 rounded-3xl text-center space-y-4">
-          <ChefHat className="mx-auto text-foreground-custom/30" size={48} />
-          <h3 className="text-lg font-bold text-foreground-custom">No recipes posted</h3>
-          <p className="text-sm text-foreground-custom/60 max-w-sm mx-auto">
-            You haven't shared any recipes yet. Click below to add your first culinary masterpiece!
-          </p>
-          <Link
-            href="/dashboard/add-recipe"
-            className="inline-block bg-brand hover:bg-brand-hover text-white text-sm font-semibold px-6 py-2.5 rounded-full"
-          >
-            Add First Recipe
-          </Link>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {recipes.map((recipe) => (
-            <div
-              key={recipe._id}
-              className="bg-card-custom border border-border-custom rounded-2xl overflow-hidden hover:shadow-md transition-shadow flex flex-col h-full"
-            >
-              <div className="h-44 w-full overflow-hidden relative">
-                <img
-                  src={recipe.recipeImage}
-                  alt={recipe.recipeName}
-                  className="h-full w-full object-cover"
-                />
-                <span className="absolute top-3 right-3 bg-brand text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                  {recipe.category}
-                </span>
-              </div>
-
-              <div className="p-5 flex flex-col flex-grow space-y-4">
-                <div>
-                  <span className="text-[10px] text-brand font-bold uppercase tracking-wider">{recipe.cuisineType}</span>
-                  <h3 className="text-lg font-bold text-foreground-custom truncate mt-0.5">{recipe.recipeName}</h3>
-                </div>
-
-                <div className="flex items-center text-xs text-foreground-custom/60 space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <Clock size={14} className="text-brand/80" />
-                    <span>{recipe.preparationTime}m Prep</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <span>{recipe.likesCount || 0} Likes</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2 pt-3 border-t border-border-custom mt-auto">
-                  <Link
-                    href={`/recipes/${recipe._id}`}
-                    className="text-xs font-semibold text-brand hover:underline mr-auto"
-                  >
-                    View Details
-                  </Link>
-
-                  <button
-                    onClick={() => startEdit(recipe)}
-                    className="p-2 border border-border-custom rounded-xl hover:bg-foreground-custom/5 text-foreground-custom/80 transition-colors"
-                  >
-                    <Edit size={14} />
-                  </button>
-
-                  <button
-                    onClick={() => handleDelete(recipe._id)}
-                    className="p-2 border border-border-custom rounded-xl hover:bg-red-50 dark:hover:bg-red-950/25 text-red-500 transition-colors"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="bg-card-custom border border-border-custom rounded-3xl overflow-hidden shadow-sm">
+        {recipes.length === 0 ? (
+          <div className="p-16 text-center text-foreground-custom/60">No recipes found.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border-custom bg-foreground-custom/[0.02]">
+                  <th className="p-4 sm:p-5 text-xs font-bold text-foreground-custom/60 uppercase tracking-wider">Recipe Name</th>
+                  <th className="p-4 sm:p-5 text-xs font-bold text-foreground-custom/60 uppercase tracking-wider">Category</th>
+                  <th className="p-4 sm:p-5 text-xs font-bold text-foreground-custom/60 uppercase tracking-wider">Author</th>
+                  <th className="p-4 sm:p-5 text-xs font-bold text-foreground-custom/60 uppercase tracking-wider">Featured</th>
+                  <th className="p-4 sm:p-5 text-xs font-bold text-foreground-custom/60 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-custom">
+                {recipes.map((item) => (
+                  <tr key={item._id} className="hover:bg-foreground-custom/[0.01] transition-colors">
+                    <td className="p-4 sm:p-5">
+                      <div className="flex items-center space-x-3">
+                        <img
+                          src={item.recipeImage}
+                          alt={item.recipeName}
+                          className="h-10 w-16 rounded-lg object-cover border border-border-custom"
+                        />
+                        <div className="max-w-[200px] truncate">
+                          <p className="text-sm font-semibold text-foreground-custom truncate">{item.recipeName}</p>
+                          <p className="text-[10px] text-foreground-custom/50 truncate">{item.cuisineType} Cuisine</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="p-4 sm:p-5 text-sm text-foreground-custom/80">{item.category}</td>
+                    <td className="p-4 sm:p-5 text-sm text-foreground-custom/70">
+                      <div>
+                        <p className="font-semibold text-foreground-custom">{item.authorName}</p>
+                        <p className="text-[10px] text-foreground-custom/50">{item.authorEmail}</p>
+                      </div>
+                    </td>
+                    <td className="p-4 sm:p-5">
+                      <button
+                        onClick={() => toggleFeature(item)}
+                        disabled={actionId === item._id}
+                        className="focus:outline-none"
+                        title={item.isFeatured ? "Remove from Featured" : "Mark as Featured"}
+                      >
+                        {actionId === item._id ? (
+                          <Loader2 size={18} className="animate-spin text-brand" />
+                        ) : (
+                          <Star
+                            size={18}
+                            className={item.isFeatured ? "text-yellow-400 fill-yellow-400" : "text-foreground-custom/30 hover:text-yellow-400 transition-colors"}
+                          />
+                        )}
+                      </button>
+                    </td>
+                    <td className="p-4 sm:p-5 text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => startEdit(item)}
+                          className="p-2 border border-border-custom rounded-xl hover:bg-foreground-custom/5 text-foreground-custom/80 transition-colors"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item._id)}
+                          className="p-2 border border-border-custom rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Edit Recipe Modal */}
       {editingRecipe && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-2xl bg-card-custom rounded-3xl p-6 border border-border-custom shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-border-custom pb-4">
-              <h3 className="text-lg font-bold text-foreground-custom">Update Recipe</h3>
+              <h3 className="text-lg font-bold text-foreground-custom">Edit Recipe (Admin)</h3>
               <button
                 onClick={() => setEditingRecipe(null)}
                 className="p-1 rounded-full hover:bg-foreground-custom/10 text-foreground-custom/60"
@@ -334,24 +345,6 @@ export default function MyRecipes() {
                   onChange={handleEditChange}
                   className="w-full bg-card-custom border border-border-custom rounded-xl p-2.5 text-sm text-foreground-custom focus:outline-none focus:border-brand"
                 />
-              </div>
-
-              {/* Recipe Access Toggle (Free/Premium) */}
-              <div className="bg-foreground-custom/[0.02] border border-border-custom rounded-2xl p-4 sm:p-5 flex items-center justify-between transition-all">
-                <div className="space-y-0.5">
-                  <label className="text-sm font-bold text-foreground-custom">Premium Recipe</label>
-                  <p className="text-xs text-foreground-custom/60">Premium recipes require a one-time Stripe payment of $4.99 to unlock for other users.</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    name="isPremium"
-                    checked={editFormData.isPremium}
-                    onChange={handleEditChange}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-foreground-custom/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand"></div>
-                </label>
               </div>
 
               {/* Ingredients Nested Form */}

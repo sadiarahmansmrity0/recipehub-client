@@ -1,28 +1,39 @@
-import { AuthProvider } from '@/context/AuthContext';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import './globals.css';
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { AppProvider } from "@/context/AppContext";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata = {
+  title: "RecipeHub — Recipe Sharing Platform",
+  description: "Share and discover delicious recipes with a global community of food lovers. Become a premium member to submit unlimited recipes.",
+};
 
 export default function RootLayout({ children }) {
-    // Check if Google Client ID exists
-    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    
-    if (!googleClientId) {
-        console.warn('NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set in environment variables');
-    }
-
-    return (
-        <html lang="en">
-            <body className="flex flex-col min-h-screen">
-                <GoogleOAuthProvider clientId={googleClientId || ''}>
-                    <AuthProvider>
-                        <Navbar />
-                        <main className="flex-grow">{children}</main>
-                        <Footer />
-                    </AuthProvider>
-                </GoogleOAuthProvider>
-            </body>
-        </html>
-    );
+  return (
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="min-h-full flex flex-col bg-background-custom text-foreground-custom">
+        <AppProvider>
+          <Navbar />
+          <main className="flex-grow flex flex-col">
+            {children}
+          </main>
+          <Footer />
+        </AppProvider>
+      </body>
+    </html>
+  );
 }
