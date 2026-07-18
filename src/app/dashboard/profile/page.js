@@ -30,7 +30,7 @@ export default function UserProfile() {
     body.append('image', file);
 
     try {
-      const imgbb_API_KEY = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API;
+      const imgbb_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
       if (!imgbb_API_KEY) {
         setError('ImgBB API key is not configured.');
         setUploadingImage(false);

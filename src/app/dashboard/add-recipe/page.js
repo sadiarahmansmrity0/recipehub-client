@@ -92,7 +92,7 @@ export default function AddRecipe() {
     body.append('image', file);
 
     try {
-      const imgbb_API_KEY = process.env.NEXT_PUBLIC_IMAGE_UPLOAD_API;
+      const imgbb_API_KEY = process.env.NEXT_PUBLIC_IMGBB_API_KEY;
       if (!imgbb_API_KEY) {
         setError('ImgBB API key is not configured.');
         setUploadingImage(false);
@@ -107,7 +107,18 @@ export default function AddRecipe() {
       if (imgbbRes.ok) {
         const imgbbData = await imgbbRes.json();
         if (imgbbData.success) {
-          setFormData(prev => ({ ...prev, recipeImage: imgbbData.data.url }));
+
+          const imageUrl = imgbbData.data.display_url || imgbbData.data.url;
+
+console.log("ImgBB Response:", imgbbData);
+console.log("Image URL:", imageUrl);
+
+setFormData(prev => ({
+  ...prev,
+  recipeImage: imageUrl,
+}));
+
+setImagePreview(imageUrl);
         } else {
           setError(imgbbData.error?.message || 'Failed to upload image to ImgBB.');
         }
@@ -136,6 +147,7 @@ export default function AddRecipe() {
 
     setLoading(true);
     try {
+      console.log("Submitting Image:", formData.recipeImage);
       const res = await fetchWithAuth(`${process.env.NEXT_PUBLIC_BASE_URL}/api/recipes`, {
         method: 'POST',
         body: JSON.stringify({
@@ -358,11 +370,13 @@ export default function AddRecipe() {
               {/* Local/Direct Image Preview */}
               {(imagePreview || formData.recipeImage) && (
                 <div className="h-20 w-32 rounded-xl overflow-hidden border border-border-custom self-start">
-                  <img
-                    src={formData.recipeImage || imagePreview}
-                    alt="Preview"
-                    className="h-full w-full object-cover"
-                  />
+                 {(formData.recipeImage || imagePreview) && (
+    <img
+        src={formData.recipeImage || imagePreview}
+        alt="Preview"
+        className="h-full w-full object-cover"
+    />
+)}
                 </div>
               )}
             </div>
