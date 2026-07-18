@@ -71,15 +71,15 @@ export default function Footer() {
             <h3 className="text-sm font-semibold text-foreground-custom uppercase tracking-wider mb-4">Contact Info</h3>
             <div className="flex items-center space-x-2.5 text-sm text-foreground-custom/70">
               <Mail size={16} className="text-brand/80" />
-              <span>support@recipehub.com</span>
+              <span>help@myrecipesite.com</span>
             </div>
             <div className="flex items-center space-x-2.5 text-sm text-foreground-custom/70">
               <Phone size={16} className="text-brand/80" />
-              <span>+1 (800) 123-4567</span>
+              <span>+44 20 7946 1234</span>
             </div>
             <div className="flex items-center space-x-2.5 text-sm text-foreground-custom/70">
               <MapPin size={16} className="text-brand/80" />
-              <span>123 Culinary St, Food City, FC 45678</span>
+              <span>45 Gourmet Ave, Sylhet, BD</span>
             </div>
           </div>
         </div>

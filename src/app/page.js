@@ -40,65 +40,193 @@ export default function Home() {
   return (
     <div className="space-y-20 pb-20 overflow-x-hidden">
       {/* 1. HERO BANNER SECTION **/}
-      <section className="relative min-h-[85vh] flex items-center justify-center gradient-bg overflow-hidden py-20 px-4">
-        {/* Decorative Blur Spheres */}
-        <div className="absolute top-10 left-10 w-72 h-72 bg-brand/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-red-400/10 rounded-full blur-3xl" />
+      <section className="relative min-h-[90vh] flex items-center gradient-bg overflow-hidden">
 
-        <div className="max-w-5xl mx-auto text-center space-y-8 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center space-x-2 bg-brand/10 text-brand px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider"
+  {/* Decorative Blur Spheres */}
+  <div className="absolute -top-32 -left-32 w-[420px] h-[420px] bg-brand/10 rounded-full blur-[130px]" />
+  <div className="absolute bottom-0 right-0 w-[420px] h-[420px] bg-brand/5 rounded-full blur-[150px]" />
+
+  <div className="container mx-auto px-6 lg:px-10 py-20">
+
+    <div className="grid lg:grid-cols-2 gap-16 items-center">
+
+      {/* Left Side */}
+      <div className="space-y-8 relative z-10">
+
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="inline-flex items-center gap-2 bg-brand/10 text-brand px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider"
+        >
+          <ChefHat size={15} />
+          <span>Elevate Your Culinary Journey</span>
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight text-foreground-custom"
+        >
+          Share Your Recipes.
+          <br />
+          Inspire the World.
+          <br />
+          <span className="bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent">
+            Savor the Extraordinary.
+          </span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: .2 }}
+          className="text-lg lg:text-xl text-foreground-custom/70 leading-8 max-w-xl"
+        >
+          Discover the art of cooking, share your culinary masterpieces,
+          and indulge in flavors that bring people together across the globe.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, scale: .9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: .3 }}
+          className="flex flex-wrap gap-4 pt-4"
+        >
+
+          <Link
+            href="/recipes"
+            className="bg-brand hover:bg-brand-hover text-white px-8 py-4 rounded-2xl font-semibold shadow-xl shadow-brand/20 transition-all duration-300 hover:-translate-y-1 flex items-center gap-2"
           >
-            <ChefHat size={14} />
-            <span>Unleash Your Inner Chef</span>
+            Explore Recipes
+            <ArrowRight size={18} />
+          </Link>
+
+          <Link
+            href="/dashboard"
+            className="bg-card-custom border border-border-custom text-foreground-custom px-8 py-4 rounded-2xl font-semibold hover:bg-foreground-custom/5 transition-all duration-300 hover:-translate-y-1"
+          >
+            Share Recipe
+          </Link>
+
+        </motion.div>
+
+        {/* Stats */}
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: .5 }}
+          className="flex gap-10 pt-10"
+        >
+
+          <div>
+            <h2 className="text-3xl font-bold text-brand">500+</h2>
+            <p className="text-foreground-custom/60 text-sm">
+              Recipes
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-3xl font-bold text-brand">100+</h2>
+            <p className="text-foreground-custom/60 text-sm">
+              Chefs
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-3xl font-bold text-brand">15K+</h2>
+            <p className="text-foreground-custom/60 text-sm">
+              Food Lovers
+            </p>
+          </div>
+
+        </motion.div>
+
+      </div>
+
+      {/* Right Side */}
+
+      <motion.div
+        initial={{ opacity: 0, x: 40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: .8 }}
+        className="relative flex justify-center"
+      >
+
+        <div className="absolute w-[380px] h-[380px] bg-brand/10 rounded-full blur-[120px]" />
+
+        <div className="relative bg-card-custom border border-border-custom rounded-[30px] p-4 shadow-2xl">
+
+          <img
+            src="https://plus.unsplash.com/premium_photo-1671377387797-8d3307a546a6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0"
+            alt="RecipeHub Hero"
+            className="w-full max-w-xl h-[540px] object-cover rounded-3xl"
+          />
+
+          {/* Floating Card */}
+
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{
+              duration: 3,
+              repeat: Infinity
+            }}
+            className="absolute -bottom-6 -left-6 bg-card-custom border border-border-custom rounded-2xl p-4 shadow-xl"
+          >
+
+            <div className="flex items-center gap-3">
+
+              <div className="bg-brand/10 p-3 rounded-xl">
+                <ChefHat className="text-brand" size={20} />
+              </div>
+
+              <div>
+                <p className="text-xs text-foreground-custom/60">
+                  Featured Recipe
+                </p>
+
+                <h4 className="font-semibold text-foreground-custom">
+                  Chicken Biryani
+                </h4>
+              </div>
+
+            </div>
+
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="text-4xl sm:text-6xl font-extrabold tracking-tight text-foreground-custom leading-tight"
-          >
-            Share Recipes. Inspire Others. <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-brand to-brand-dark bg-clip-text text-transparent">
-              Eat Deliciously.
-            </span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-lg sm:text-xl text-foreground-custom/70 max-w-3xl mx-auto leading-relaxed"
-          >
-            Welcome to RecipeHub, the premier recipe sharing platform. Browse thousands of curated recipes, publish your culinary secrets, save your favorites, and become part of a global foodie family.
-          </motion.p>
+          {/* Community Card */}
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+            animate={{ y: [0, 8, 0] }}
+            transition={{
+              duration: 4,
+              repeat: Infinity
+            }}
+            className="absolute top-5 -right-5 bg-card-custom border border-border-custom rounded-2xl px-5 py-4 shadow-xl"
           >
-            <Link
-              href="/recipes"
-              className="w-full sm:w-auto bg-brand hover:bg-brand-hover text-white text-base font-semibold px-8 py-4 rounded-full transition-all hover:scale-105 shadow-lg shadow-brand/20 flex items-center justify-center space-x-2"
-            >
-              <span>Explore All Recipes</span>
-              <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/dashboard"
-              className="w-full sm:w-auto bg-card-custom hover:bg-foreground-custom/5 text-foreground-custom border border-border-custom text-base font-semibold px-8 py-4 rounded-full transition-all hover:scale-105 flex items-center justify-center"
-            >
-              Share Your Recipe
-            </Link>
+
+            <h3 className="text-2xl font-bold text-brand">
+              15K+
+            </h3>
+
+            <p className="text-xs text-foreground-custom/60">
+              Food Lovers
+            </p>
+
           </motion.div>
+
         </div>
-      </section>
+
+      </motion.div>
+
+    </div>
+
+  </div>
+
+</section>
+
 
       {/* 2. DYNAMIC SECTION 1: FEATURED RECIPES (Framer Motion Animation) **/}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
